@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Growth Workspace</title>
+  <style>
+    :root {
+      --bg: #0f1115;
+      --panel: #151821;
+      --panel-2: #1d222c;
+      --text: #f2f3f5;
+      --muted: #9ea5b3;
+      --line: #2a3140;
+      --accent: #ffffff;
+      --tag: #262d3a;
+      --radius: 14px;
+      --shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+    }
+    body.light {
+      --bg: #f7f8fa;
+      --panel: #ffffff;
+      --panel-2: #f1f3f7;
+      --text: #101317;
+      --muted: #5f6b7a;
+      --line: #d7dce3;
+      --accent: #111111;
+      --tag: #e9edf3;
+      --shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Inter, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .app {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      min-height: 100vh;
+      transition: grid-template-columns 0.25s ease;
+    }
+    .app.collapsed { grid-template-columns: 80px 1fr; }
+
+    .sidebar {
+      border-right: 1px solid var(--line);
+      background: var(--panel);
+      padding: 14px;
+      position: relative;
+      overflow: visible;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 14px;
+    }
+    .logo { font-weight: 700; letter-spacing: 0.3px; }
+    .icon-btn {
+      border: 1px solid var(--line);
+      background: transparent;
+      color: var(--text);
+      border-radius: 10px;
+      width: 36px;
+      height: 36px;
+      cursor: pointer;
+    }
+
+    .menu { display: flex; flex-direction: column; gap: 8px; }
+    .item {
+      border: 1px solid transparent;
+      padding: 10px 12px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      color: var(--text);
+      position: relative;
+    }
+    .item:hover, .item.active { background: var(--panel-2); border-color: var(--line); }
+    .item .label { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .item .arrow { color: var(--muted); font-size: 12px; }
+    .emoji { width: 18px; text-align: center; }
+
+    .sublist {
+      margin: 2px 0 8px 32px;
+      border-left: 1px dashed var(--line);
+      padding-left: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .subitem {
+      padding: 7px 8px;
+      border-radius: 8px;
+      color: var(--muted);
+      cursor: pointer;
+      border: 1px solid transparent;
+      font-size: 13px;
+    }
+    .subitem:hover { background: var(--panel-2); border-color: var(--line); color: var(--text); }
+
+    .floating {
+      position: absolute;
+      left: 76px;
+      min-width: 210px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      padding: 8px;
+      z-index: 6;
+      display: none;
+    }
+
+    .main {
+      padding: 16px 22px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      align-items: center;
+    }
+    .chip {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      padding: 8px 12px;
+      border-radius: 999px;
+      font-size: 13px;
+      color: var(--text);
+      cursor: pointer;
+    }
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      display: grid;
+      place-items: center;
+      font-weight: 600;
+      cursor: pointer;
+      background: var(--panel);
+      position: relative;
+    }
+    .dropdown {
+      position: absolute;
+      right: 0;
+      top: 44px;
+      width: 180px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      display: none;
+      overflow: hidden;
+    }
+    .dropdown button {
+      width: 100%;
+      text-align: left;
+      background: transparent;
+      color: var(--text);
+      border: none;
+      padding: 10px 12px;
+      cursor: pointer;
+    }
+    .dropdown button:hover { background: var(--panel-2); }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: 1fr 40%;
+      gap: 12px;
+      min-height: 82vh;
+    }
+    .chat-card, .inspiration {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      padding: 16px;
+    }
+    .muted { color: var(--muted); }
+    .line {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      align-items: center;
+      margin-top: 10px;
+    }
+    .goal-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin: 12px 0;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .goal-pill {
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 13px;
+      cursor: pointer;
+      background: var(--tag);
+    }
+    .goal-pill.active { outline: 1px solid var(--accent); }
+
+    textarea {
+      width: 100%;
+      min-height: 170px;
+      resize: vertical;
+      border-radius: 12px;
+      border: 1px solid var(--line);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 12px;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    .strategy-grid {
+      margin-top: 10px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+    }
+    .strategy {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px;
+      background: var(--panel-2);
+      cursor: pointer;
+    }
+    .strategy.active { outline: 1px solid var(--accent); }
+    .strategy h4 { margin: 0 0 5px; font-size: 14px; }
+    .strategy p { margin: 0; color: var(--muted); font-size: 12px; }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+    .scene {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 12px;
+      background: var(--panel-2);
+      cursor: pointer;
+      min-height: 96px;
+    }
+    .scene:hover { outline: 1px solid var(--accent); }
+    .scene h4 { margin: 0 0 8px; }
+    .scene p { margin: 0; color: var(--muted); font-size: 13px; }
+
+    .hidden-labels .label, .hidden-labels .arrow, .hidden-labels .brand .logo { display: none; }
+    .hidden-labels .sublist { display: none !important; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display: none;
+      place-items: center;
+      z-index: 20;
+    }
+    .dialog {
+      width: min(500px, 92vw);
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .dialog input, .dialog textarea {
+      width: 100%;
+      margin-top: 6px;
+      margin-bottom: 10px;
+      min-height: auto;
+    }
+    .dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="logo">AIX Lab</div>
+        <button class="icon-btn" id="collapseBtn">☰</button>
+      </div>
+
+      <nav class="menu" id="menu"></nav>
+      <div class="floating" id="floating"></div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <button class="chip" id="credits">Credits: 1280</button>
+        <button class="chip" id="inviteBtn">邀请新用户</button>
+        <button class="chip" id="langBtn">EN</button>
+        <button class="chip" id="themeBtn">黑白切换</button>
+        <div class="avatar" id="avatarBtn">U
+          <div class="dropdown" id="avatarMenu">
+            <button>个人中心</button>
+            <button>模型偏好</button>
+            <button>账单设置</button>
+            <button>退出登录</button>
+          </div>
+        </div>
+      </div>
+
+      <section class="workspace">
+        <section class="chat-card">
+          <h2 id="homeTitle">主页会话</h2>
+          <p class="muted" id="homeDesc">将所有选择和上下文都放在对话里，减少跳转成本。</p>
+
+          <div class="line">
+            <button class="chip" id="atBtn">@ 关联产品</button>
+            <button class="chip" id="attachBtn">+ 附件</button>
+            <button class="chip" id="startBtn">启动会话</button>
+          </div>
+
+          <div class="goal-row">
+            <div class="line" id="goalContainer"></div>
+            <button class="chip" id="clearGoal" style="display:none;">× 清除目的</button>
+          </div>
+
+          <textarea id="promptBox"></textarea>
+
+          <div>
+            <h3 style="margin:12px 0 8px;">策略</h3>
+            <div class="strategy-grid" id="strategyGrid"></div>
+          </div>
+        </section>
+
+        <section class="inspiration">
+          <h3 id="inspoTitle">灵感库</h3>
+          <p class="muted" id="inspoDesc">点击营销工作流模板，直接填充 intent 到对话框。</p>
+          <div class="card-grid" id="sceneGrid"></div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal" id="modal">
+    <div class="dialog">
+      <h3 id="modalTitle">新建产品</h3>
+      <label>产品名称<input id="productName" placeholder="例如：产品增长引擎" /></label>
+      <label>产品链接<input id="productUrl" placeholder="https://..." /></label>
+      <label>人设字段<textarea id="productPersona" placeholder="目标用户、品牌语调、优势..." style="min-height:100px;"></textarea></label>
+      <div class="dialog-actions">
+        <button class="chip" id="cancelModal">取消</button>
+        <button class="chip" id="saveProduct">保存并进入详情</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const state = {
+      collapsed: false,
+      lang: 'zh',
+      userHasProduct: false,
+      products: ['产品1', '产品2'],
+      history: ['SEO外链自动化策略讨论', '私信转化脚本优化', '热点追踪内容排期'],
+      activeGoal: 'traffic',
+      activeStrategy: null,
+      prompt: ''
+    };
+
+    const goals = {
+      traffic: {
+        zh: '流量增长',
+        en: 'Traffic Growth',
+        strategies: [
+          { id: 'traffic-comments', zh: '批量评论', en: 'Bulk Commenting', descZh: '批量生成高相关评论模板', descEn: 'Create relevant comment batches', promptZh: '基于产品价值点生成100条高相关评论模板，覆盖不同场景。', promptEn: 'Generate 100 relevant comment templates based on product value points across scenarios.' },
+          { id: 'traffic-content', zh: '内容创作', en: 'Content Creation', descZh: '高频内容矩阵生产', descEn: 'Build high-frequency content matrix', promptZh: '围绕本周热点输出10条多平台内容创意，并给出发布节奏。', promptEn: 'Create 10 cross-platform content ideas around weekly trends with posting cadence.' }
+        ]
+      },
+      marketing: {
+        zh: '精准营销',
+        en: 'Precision Marketing',
+        strategies: [
+          { id: 'marketing-dm', zh: '批量私信', en: 'Bulk DM', descZh: '按用户标签生成私信脚本', descEn: 'DM scripts by user tag', promptZh: '按A/B/C三类目标用户，写出首轮私信脚本与跟进节奏。', promptEn: 'Write first-round DM scripts and follow-up cadence for user segments A/B/C.' },
+          { id: 'marketing-at', zh: '发帖@', en: 'Post @Mentions', descZh: '发帖并@潜在协作对象', descEn: 'Mention likely collaborators in posts', promptZh: '设计5条可@合作对象的讨论帖，提高互动和转化。', promptEn: 'Design 5 discussion posts with @mentions to increase engagement and conversion.' }
+        ]
+      },
+      nurture: {
+        zh: '账号养成',
+        en: 'Account Nurture',
+        strategies: [
+          { id: 'nurture-action', zh: '一键点赞/发帖/转发', en: 'Like/Post/Repost', descZh: '模拟自然行为养成账号权重', descEn: 'Natural behavior sequence to build account score', promptZh: '生成未来7天账号行为计划（点赞、发帖、转发比例与时间点）。', promptEn: 'Generate a 7-day account behavior plan (like/post/repost ratio and timing).' }
+        ]
+      }
+    };
+
+    const scenes = [
+      { zh: 'SEO外链营销', en: 'SEO Backlink Outreach', intentZh: '请设计一个SEO外链营销工作流：选题、外链站点、触达话术、复盘指标。', intentEn: 'Design an SEO backlink outreach workflow: topics, sites, outreach copy, review KPIs.' },
+      { zh: '热点追踪', en: 'Trend Tracking', intentZh: '给我一个热点追踪工作流，含抓取、筛选、快速改写发布。', intentEn: 'Provide a trend-tracking workflow with capture, filtering, and quick rewrite publishing.' },
+      { zh: '私域裂变', en: 'Private Community Growth', intentZh: '设计私域裂变流程模板，包括激励机制和转化漏斗。', intentEn: 'Design a private community growth template with incentives and conversion funnel.' },
+      { zh: 'A/B话术测试', en: 'A/B Copy Testing', intentZh: '为同一产品生成A/B两套话术测试方案与指标定义。', intentEn: 'Generate A/B copy testing plans and metric definitions for one product.' }
+    ];
+
+    const menuData = [
+      { id: 'new-chat', icon: '➕', zh: '新建会话', en: 'New Chat' },
+      { id: 'products', icon: '🧩', zh: '产品管理', en: 'Products', expand: true },
+      { id: 'analytics', icon: '📈', zh: '增长分析', en: 'Growth Analytics' },
+      { id: 'skills', icon: '🛍️', zh: '技能商店', en: 'Skill Store' },
+      { id: 'history', icon: '🕘', zh: '会话历史', en: 'History', expand: true }
+    ];
+
+    const menu = document.getElementById('menu');
+    const floating = document.getElementById('floating');
+    const promptBox = document.getElementById('promptBox');
+    const goalContainer = document.getElementById('goalContainer');
+    const strategyGrid = document.getElementById('strategyGrid');
+    const sceneGrid = document.getElementById('sceneGrid');
+
+    function t(zh, en) { return state.lang === 'zh' ? zh : en; }
+
+    function renderMenu() {
+      menu.innerHTML = '';
+      menuData.forEach(item => {
+        const el = document.createElement('div');
+        el.className = 'item';
+        el.dataset.id = item.id;
+        el.innerHTML = `<span class="emoji">${item.icon}</span><span class="label">${t(item.zh, item.en)}</span>${item.expand ? '<span class="arrow">▾</span>' : ''}`;
+        menu.appendChild(el);
+
+        if (item.id === 'products' && !state.collapsed) {
+          const list = document.createElement('div');
+          list.className = 'sublist';
+          [...state.products, t('+ 新建产品', '+ New Product')].forEach(name => {
+            const s = document.createElement('div');
+            s.className = 'subitem';
+            s.textContent = name;
+            s.onclick = () => {
+              if (name.includes('新建') || name.includes('New')) openModal();
+              else alert(t(`跳转到 ${name} 详情页`, `Go to ${name} details`));
+            };
+            list.appendChild(s);
+          });
+          menu.appendChild(list);
+        }
+
+        if (item.id === 'history' && !state.collapsed) {
+          const list = document.createElement('div');
+          list.className = 'sublist';
+          state.history.forEach(name => {
+            const s = document.createElement('div');
+            s.className = 'subitem';
+            s.textContent = name;
+            s.onclick = () => alert(t(`打开历史会话：${name}`, `Open history: ${name}`));
+            list.appendChild(s);
+          });
+          menu.appendChild(list);
+        }
+
+        el.onclick = () => {
+          if (item.id === 'new-chat') {
+            promptBox.value = '';
+            state.activeGoal = null;
+            state.activeStrategy = null;
+            renderGoals();
+            renderStrategies();
+          }
+          if (item.id === 'products' && state.collapsed) {
+            showFloating(el, [...state.products, t('+ 新建产品', '+ New Product')]);
+          }
+          if (item.id === 'history' && state.collapsed) {
+            showFloating(el, state.history);
+          }
+        };
+      });
+    }
+
+    function showFloating(anchor, list) {
+      const rect = anchor.getBoundingClientRect();
+      const sidebarRect = document.getElementById('sidebar').getBoundingClientRect();
+      floating.style.top = `${rect.top - sidebarRect.top}px`;
+      floating.innerHTML = list.map(name => `<div class="subitem">${name}</div>`).join('');
+      floating.style.display = 'block';
+      [...floating.querySelectorAll('.subitem')].forEach((el) => {
+        el.onclick = () => {
+          if (el.textContent.includes('新建') || el.textContent.includes('New')) openModal();
+          floating.style.display = 'none';
+        };
+      });
+    }
+
+    function renderGoals() {
+      goalContainer.innerHTML = '';
+      const clearGoal = document.getElementById('clearGoal');
+      Object.keys(goals).forEach(key => {
+        if (state.activeGoal && key !== state.activeGoal) return;
+        const btn = document.createElement('button');
+        btn.className = `goal-pill ${state.activeGoal === key ? 'active' : ''}`;
+        btn.textContent = t(goals[key].zh, goals[key].en);
+        btn.onclick = () => {
+          state.activeGoal = key;
+          state.activeStrategy = goals[key].strategies[0].id;
+          applyStrategyPrompt();
+          renderGoals();
+          renderStrategies();
+        };
+        goalContainer.appendChild(btn);
+      });
+      clearGoal.style.display = state.activeGoal ? 'inline-flex' : 'none';
+    }
+
+    function applyStrategyPrompt() {
+      if (!state.activeGoal || !state.activeStrategy) return;
+      const st = goals[state.activeGoal].strategies.find(s => s.id === state.activeStrategy);
+      if (st) promptBox.value = t(st.promptZh, st.promptEn);
+    }
+
+    function renderStrategies() {
+      strategyGrid.innerHTML = '';
+      if (!state.activeGoal) return;
+      goals[state.activeGoal].strategies.forEach(st => {
+        const card = document.createElement('div');
+        card.className = `strategy ${state.activeStrategy === st.id ? 'active' : ''}`;
+        card.innerHTML = `<h4>${t(st.zh, st.en)}</h4><p>${t(st.descZh, st.descEn)}</p>`;
+        card.onclick = () => {
+          state.activeStrategy = st.id;
+          applyStrategyPrompt();
+          renderStrategies();
+        };
+        strategyGrid.appendChild(card);
+      });
+    }
+
+    function renderScenes() {
+      sceneGrid.innerHTML = '';
+      scenes.forEach(sc => {
+        const el = document.createElement('div');
+        el.className = 'scene';
+        el.innerHTML = `<h4>${t(sc.zh, sc.en)}</h4><p>${t('点击将场景 intent 注入对话框', 'Click to inject intent')}</p>`;
+        el.onclick = () => { promptBox.value = t(sc.intentZh, sc.intentEn); };
+        sceneGrid.appendChild(el);
+      });
+    }
+
+    function translateUI() {
+      document.getElementById('homeTitle').textContent = t('主页会话', 'Home Conversation');
+      document.getElementById('homeDesc').textContent = t('将所有选择和上下文都放在对话里，减少跳转成本。', 'Keep all controls in-chat to reduce context switching.');
+      document.getElementById('inspoTitle').textContent = t('灵感库', 'Inspiration Library');
+      document.getElementById('inspoDesc').textContent = t('点击营销工作流模板，直接填充 intent 到对话框。', 'Click workflow templates to fill intent directly.');
+      document.getElementById('startBtn').textContent = t('启动会话', 'Start Chat');
+      document.getElementById('atBtn').textContent = t('@ 关联产品', '@ Add Product');
+      document.getElementById('attachBtn').textContent = t('+ 附件', '+ Attachment');
+      document.getElementById('inviteBtn').textContent = t('邀请新用户', 'Invite Users');
+      document.getElementById('themeBtn').textContent = t('黑白切换', 'B/W Theme');
+      document.getElementById('clearGoal').textContent = t('× 清除目的', '× Clear Goal');
+      document.getElementById('modalTitle').textContent = t('新建产品', 'Create Product');
+      renderMenu();
+      renderGoals();
+      renderStrategies();
+      renderScenes();
+    }
+
+    function openModal() {
+      document.getElementById('modal').style.display = 'grid';
+    }
+
+    document.getElementById('collapseBtn').onclick = () => {
+      state.collapsed = !state.collapsed;
+      document.getElementById('app').classList.toggle('collapsed', state.collapsed);
+      document.getElementById('sidebar').classList.toggle('hidden-labels', state.collapsed);
+      floating.style.display = 'none';
+      renderMenu();
+    };
+
+    document.getElementById('clearGoal').onclick = () => {
+      state.activeGoal = null;
+      state.activeStrategy = null;
+      renderGoals();
+      renderStrategies();
+    };
+
+    document.getElementById('langBtn').onclick = () => {
+      state.lang = state.lang === 'zh' ? 'en' : 'zh';
+      document.getElementById('langBtn').textContent = state.lang === 'zh' ? 'EN' : '中文';
+      translateUI();
+    };
+
+    document.getElementById('themeBtn').onclick = () => {
+      document.body.classList.toggle('light');
+    };
+
+    document.getElementById('avatarBtn').onclick = (e) => {
+      const menu = document.getElementById('avatarMenu');
+      menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+      e.stopPropagation();
+    };
+
+    document.body.addEventListener('click', () => {
+      document.getElementById('avatarMenu').style.display = 'none';
+      floating.style.display = 'none';
+    });
+
+    document.getElementById('saveProduct').onclick = () => {
+      const name = document.getElementById('productName').value.trim();
+      if (!name) return alert(t('请输入产品名称', 'Please enter a product name'));
+      state.products.push(name);
+      state.userHasProduct = true;
+      renderMenu();
+      document.getElementById('modal').style.display = 'none';
+      alert(t(`已创建 ${name}，进入产品详情页。`, `${name} created. Entering details page.`));
+    };
+
+    document.getElementById('cancelModal').onclick = () => {
+      document.getElementById('modal').style.display = 'none';
+    };
+
+    document.getElementById('startBtn').onclick = () => {
+      if (!state.userHasProduct) {
+        openModal();
+        alert(t('检测到你还没有产品。请先输入 URL / 产品链接，系统会分析后进入产品页。', 'No product found. Please add URL/link first for analysis.'));
+      } else {
+        alert(t('会话已启动，可继续编辑提示词。', 'Chat started. You can keep editing prompt.'));
+      }
+    };
+
+    document.getElementById('atBtn').onclick = () => {
+      const pick = state.products.join(' / ');
+      alert(t(`可插入产品：${pick}`, `Available products: ${pick}`));
+    };
+
+    // first-time default intent & strategy
+    state.activeGoal = 'traffic';
+    state.activeStrategy = goals.traffic.strategies[0].id;
+    applyStrategyPrompt();
+    translateUI();
+  </script>
+</body>
+</html>
